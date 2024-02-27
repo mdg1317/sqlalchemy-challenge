@@ -36,13 +36,22 @@ app = Flask(__name__)
 # Flask Routes
 #################################################
 
+# Store latest date and starting date for use in multiple routes
+latest_date = session.query(Measurement).order_by(Measurement.date.desc()).first().date
+latest_date_dt = dt.datetime.strptime(latest_date, "%Y-%m-%d")
+starting_date = (latest_date_dt - dt.timedelta(days=365)).strftime("%Y-%m-%d")
+
 # Home page
 @app.route("/")
 def home():
+    # Print message to console
     print("Server received request for 'Home' page...")
+
+    # Return all available routes
     return (
         f"127.0.0.1:5000/api/v1.0/precipitation<br/>"
         f"127.0.0.1:5000/api/v1.0/stations<br/>"
+        f"127.0.0.1:5000/api/v1.0/tobs<br/>"
         f"127.0.0.1:5000/api/v1.0/start<br/>"
         f"127.0.0.1:5000/api/v1.0/start/end<br/>"
     )
@@ -53,11 +62,6 @@ def home():
 def precipitation():
     # Print message to console
     print("Server received request for 'Precipitation' page...")
-
-    # Get latest date and calculate date 12 months before
-    latest_date = session.query(Measurement).order_by(Measurement.date.desc()).first().date
-    latest_date_dt = dt.datetime.strptime(latest_date, "%Y-%m-%d")
-    starting_date = (latest_date_dt - dt.timedelta(days=365)).strftime("%Y-%m-%d")
 
     # Query all precipitation data with the last year
     prcp_query = session.query(Measurement.date, Measurement.prcp)\
@@ -77,23 +81,58 @@ def precipitation():
 # Station analysis page
 @app.route("/api/v1.0/stations")
 def stations():
+    # Print message to console
     print("Server received request for 'Stations' page...")
 
+    # Query all station data
     stations_query = session.query(Station).distinct().all()
 
+    # Put the queried data into a dictionary
     station_dict = []
     for q in stations_query:
         station_dict.append({"station": q.station, "name": q.name, "latitude": q.latitude, "longitude": q.longitude, "elevation": q.elevation})
     
+    # Return the JSONified dictionary
     return jsonify(station_dict)
 
+
+# TOBS analysis page
+@app.route("/api/v1.0/tobs")
+def tobs():
+    # Print message to console
+    print("Server received request for 'TOBS' page...")
+
+    # Get the most active station
+    most_active_station = session.query(Measurement.station)\
+        .group_by(Measurement.station)\
+        .order_by(func.count(Measurement.station).desc()).all()[0][0]
+    
+    # Query all temperature data over last 12 months
+    temp_query = session.query(Measurement.date, Measurement.tobs)\
+        .filter(Measurement.station == most_active_station)\
+        .filter(Measurement.date >= starting_date).all()
+    
+    # Put the queried data into a dictionary
+    temp_dict = {}
+    for x in range(len(temp_query)):
+        temp_dict[temp_query[x][0]] = temp_query[x][1]
+
+    # Return the JSONified dictionary
+    return jsonify(temp_dict)
+
+
+# Start route
 @app.route("/api/v1.0/<start>")
 def start(start):
+    # Print message to console
     print("Server received request for 'Start' page...")
     return "Start"
 
+
+# Start/end routes
 @app.route("/api/v1.0/<start>/<end>")
 def start_end(start, end):
+    # Print message to console
     print("Server received request for 'Start/End' page...")
     return "Start/End"
 
