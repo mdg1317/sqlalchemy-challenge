@@ -128,22 +128,14 @@ def start(start):
     print("Server received request for 'Start' page...")
 
     # Query all temperatures starting from specified date
-    temp_query = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
-        .group_by(Measurement.date)\
+    temp_query = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
         .filter(Measurement.date >= start).all()
     
     # Put the queried data into a dictionary
-    temp_list = []
-    for x in range(len(temp_query)):
-        temp_dict = {}
-        temp_dict["date"] = temp_query[x][0]
-        temp_dict["min"] = temp_query[x][1]
-        temp_dict["avg"] = temp_query[x][2]
-        temp_dict["max"] = temp_query[x][3]
-        temp_list.append(temp_dict)
+    temp_dict = {"min": temp_query[0][0], "avg": temp_query[0][1], "max": temp_query[0][2]}
 
     # Return the JSONified dictionary
-    return jsonify(temp_list)
+    return jsonify(temp_dict)
 
 
 # Start/end routes
@@ -153,22 +145,14 @@ def start_end(start, end):
     print("Server received request for 'Start/End' page...")
 
     # Query all temperatures starting from specified date
-    temp_query = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
-        .group_by(Measurement.date)\
+    temp_query = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
         .filter((Measurement.date >= start) & (Measurement.date <= end)).all()
     
     # Put the queried data into a dictionary
-    temp_list = []
-    for x in range(len(temp_query)):
-        temp_dict = {}
-        temp_dict["date"] = temp_query[x][0]
-        temp_dict["min"] = temp_query[x][1]
-        temp_dict["avg"] = temp_query[x][2]
-        temp_dict["max"] = temp_query[x][3]
-        temp_list.append(temp_dict)
+    temp_dict = {"min": temp_query[0][0], "avg": temp_query[0][1], "max": temp_query[0][2]}
 
     # Return the JSONified dictionary
-    return jsonify(temp_list)
+    return jsonify(temp_dict)
 
 if __name__ == "__main__":
     app.run(debug=True)
