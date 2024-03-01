@@ -126,7 +126,24 @@ def tobs():
 def start(start):
     # Print message to console
     print("Server received request for 'Start' page...")
-    return "Start"
+
+    # Query all temperatures starting from specified date
+    temp_query = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+        .group_by(Measurement.date)\
+        .filter(Measurement.date >= start).all()
+    
+    # Put the queried data into a dictionary
+    temp_list = []
+    for x in range(len(temp_query)):
+        temp_dict = {}
+        temp_dict["date"] = temp_query[x][0]
+        temp_dict["min"] = temp_query[x][1]
+        temp_dict["avg"] = temp_query[x][2]
+        temp_dict["max"] = temp_query[x][3]
+        temp_list.append(temp_dict)
+
+    # Return the JSONified dictionary
+    return jsonify(temp_list)
 
 
 # Start/end routes
@@ -134,7 +151,24 @@ def start(start):
 def start_end(start, end):
     # Print message to console
     print("Server received request for 'Start/End' page...")
-    return "Start/End"
+
+    # Query all temperatures starting from specified date
+    temp_query = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+        .group_by(Measurement.date)\
+        .filter((Measurement.date >= start) & (Measurement.date <= end)).all()
+    
+    # Put the queried data into a dictionary
+    temp_list = []
+    for x in range(len(temp_query)):
+        temp_dict = {}
+        temp_dict["date"] = temp_query[x][0]
+        temp_dict["min"] = temp_query[x][1]
+        temp_dict["avg"] = temp_query[x][2]
+        temp_dict["max"] = temp_query[x][3]
+        temp_list.append(temp_dict)
+
+    # Return the JSONified dictionary
+    return jsonify(temp_list)
 
 if __name__ == "__main__":
     app.run(debug=True)
